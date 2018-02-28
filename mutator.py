@@ -147,16 +147,7 @@ class Mutator (object):
   def __init__ (self, data, inputs):
     print "Starting Mutator..."
     self.ss = []
-    for opt in inputs:
-      print "------------------------"
-      print "Scenario:", opt["name"]
-      self.warnings = []
-      sheet  = self.get_sheet(data, opt)
-      rows   = self.get_rows(sheet, opt)
-      dates  = self.get_dates(rows["dates"])
-      series = self.get_series(rows["series"], dates, opt)
-      self.parse_series(series)
-      self.report(opt)
+    for opt in inputs: self.parse_sheet(data, opt)
     print "Mutator finished."
 
 
@@ -170,6 +161,17 @@ class Mutator (object):
       return sheet
     except KeyError:
       raise Exception("Sheet not found!")
+
+  def parse_sheet (self, data, opt):
+    print "------------------------"
+    print "Scenario:", opt["name"]
+    self.warnings = []
+    sheet  = self.get_sheet(data, opt)
+    rows   = self.get_rows(sheet, opt)
+    dates  = self.get_dates(rows["dates"])
+    series = self.get_series(rows["series"], dates, opt)
+    self.parse_series(series)
+    self.report(opt)
 
   # Group rows by type
   def get_rows (self, sheet, opt):
