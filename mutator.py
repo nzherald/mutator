@@ -146,11 +146,11 @@ class SuperSeries (object):
 class Mutator (object):
   def __init__ (self, data, inputs):
     print "Starting Mutator..."
-    self.warnings = []
     self.ss = []
     for opt in inputs:
       print "------------------------"
       print "Scenario:", opt["name"]
+      self.warnings = []
       sheet  = self.get_sheet(data, opt)
       rows   = self.get_rows(sheet, opt)
       dates  = self.get_dates(rows["dates"])
@@ -291,7 +291,6 @@ class Mutator (object):
 
   def report (self, opt):
     warnings = self.warnings
-    self.warnings = []
     no_warn  = None
     bad_rows = set()
     if "ignore_warnings" in opt:
@@ -315,6 +314,12 @@ class Mutator (object):
       print "Warnings on rows", sorted(bad_rows)
     if no_warn and suppressed:
       print len(suppressed), "warnings suppressed"
+
+    # Stop on warnings!
+    if warnings:
+      print opt
+      raise Exception("Stopping on warning!")
+
 
   def jsonify (self):
     out = []
