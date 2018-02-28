@@ -42,13 +42,11 @@ class Series (object):
     self.data     = self.get_data(row, dates)
 
   def get_name (self, row):
-    name = None
     cells = [c for c in row if c and is_text(c)]
-    for c in cells:
-      if name: self.warn("Additional text found: " + c)
-      else   : name = c
-    if not name: self.warn("Invalid series (no label)")
-    return name
+    if not cells: self.warn("Invalid series (no label)")
+    else:
+      if len(cells) > 1: self.warn("Additional text found: " + cells[1])
+      return cells[0]
 
   # Data should be a dictionary of dates:values
   # e.g. { "06/07" : 100, "07/08" : 102, ... }
