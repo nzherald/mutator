@@ -243,42 +243,37 @@ class Mutator (object):
     exact     = []
     fuzzy     = []
     new       = []
-    s_list    = [s for s in series]
-    ss_list   = [ss for ss in self.ss]
 
-    # Deduplicate
-    for s in s_list:
-      for t in s_list:
-        if s is t: continue
-        if s.data_match(t.data, 0.0) is len(t.data):
-          s_list.remove(t)
+    # Remove full duplicates (100% data match)
+    for s in list(series):
+      for t in list(series):
+        if s is not t and s.data_match(t.data, 0.0) is len(t.data):
+          series.remove(t)
           duplicate.append(t)
           break
 
     # Look for exact matches
-    for s in s_list:
-      match = self.find_ss(s, ss_list, 0.0, 6)
+    for s in list(series):
+      match = self.find_ss(s, self.ss, 0.0, 6)
       if match:
         match.add_series(s)
-        ss_list.remove(match)
-        s_list.remove(s)
+        series.remove(s)
         exact.append(s)
 
     # Look for fuzzy matches
-    for s in s_list:
-      match = self.find_ss(s, ss_list, 0.0005, 8)
+    for s in list(series):
+      match = self.find_ss(s, self.ss, 0.0005, 8)
       if match:
         match.add_series(s)
-        ss_list.remove(match)
-        s_list.remove(s)
+        series.remove(s)
         fuzzy.append(s)
 
     # Create new SuperSeries for the rest
-    for s in s_list:
+    for s in series:
       self.ss.append(SuperSeries(s))
       new.append(s)
 
-    for s in new + exact + fuzzy:
+    for s in exact + fuzzy + new:
       self.warnings += s.warnings
 
     print "Series integrated:", len(duplicate), "duplicates,", len(exact), "exact matches,", len(fuzzy), "fuzzy matches,", len(new), "unmatched new series"
