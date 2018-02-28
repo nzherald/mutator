@@ -144,11 +144,11 @@ class SuperSeries (object):
 
 
 class Mutator (object):
-  def __init__ (self, data, scenarios):
+  def __init__ (self, data, inputs):
     print "Starting Mutator..."
     self.warnings = []
     self.ss = []
-    for opt in scenarios:
+    for opt in inputs:
       print "------------------------"
       print "Scenario:", opt["name"]
       sheet  = self.get_sheet(data, opt)
@@ -330,147 +330,18 @@ class Mutator (object):
 
 
 
-scenarios = [
-  {
-    "name" : "2008 BEFU",
-    "sheet" : "08-BEFU",
-    "ignore_rows" : [0, 5],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2008 PREFU",
-    "sheet" : "08-PREFU",
-    "ignore_rows" : [0, 5],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2009 BEFU",
-    "sheet" : "09-BEFU",
-    "ignore_rows" : [0, 1, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2009 HYEFU",
-    "sheet" : "09-HYEFU",
-    "ignore_rows" : [0, 1, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2010 BEFU",
-    "sheet" : "10-BEFU",
-    "ignore_rows" : [0, 1, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2010 HYEFU",
-    "sheet" : "10-HYEFU",
-    "ignore_rows" : [0, 1, 3, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2011 BEFU",
-    "sheet" : "11-BEFU",
-    "ignore_rows" : [0, 1, 3, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2011 PREFU",
-    "sheet" : "11-PREFU",
-    "ignore_rows" : [0, 1, 3, 4],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2012 BEFU",
-    "sheet" : "12-BEFU",
-    "ignore_rows" : [0, 1, 3, 4, 226],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2012 HYEFU",
-    "sheet" : "12-HYEFU",
-    "ignore_rows" : [0, 1, 3, 4, 229],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2013 BEFU",
-    "sheet" : "13-BEFU",
-    "ignore_rows" : [0, 1, 3, 4, 240],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2013 HYEFU",
-    "sheet" : "13-HYEFU",
-    "ignore_rows" : [0, 1, 3, 4, 240],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2014 BEFU",
-    "sheet" : "14-BEFU",
-    "ignore_rows" : [0, 1, 3, 4, 240],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-  {
-    "name" : "2014 PREFU",
-    "sheet" : "14-PREFU",
-    "ignore_rows" : [0, 1, 3, 4, 244],
-    "ignore_series" : [],
-    "ignore_warnings" : []
-  },
-#   {
-#     "name" : "2015 BEFU",
-#     "sheet" : "15-BEFU",
-#     "ignore_rows" : [0, 1, 4],
-#     "ignore_series" : [
-#       "annual percentage growth"
-#     ],
-#     "ignore_warnings" : [
-#       "Additional text found: From Fiscal Forecasts",
-#       "Additional text found: Projected Years only",
-#       "Additional text found: From Tracks",
-#       "Additional text found: From Economic Forecasts"
-#     ]
-#   },
-#   {
-#     "name" : "2015 HYEFU",
-#     "sheet" : "15-HYEFU",
-#     "ignore_rows" : [0, 1, 4],
-#     "ignore_series" : [
-#       "annual percentage growth"
-#     ],
-#     "ignore_warnings" : [
-#       "Additional text found: From Fiscal Forecasts",
-#       "Additional text found: Projected Years only",
-#       "Additional text found: From Tracks",
-#       "Additional text found: From Economic Forecasts"
-#     ]
-#   },
-#   { "name" : "2016 BEFU",  "sheet" : "16-BEFU",  "ignore_rows" : [0, 1, 4, 476, 482], "ignore_warnings" : ["More than one name found", "Date not found on col 2"] },
-#   { "name" : "2016 HYEFU", "sheet" : "16-HYEFU", "ignore_rows" : [0, 2, 3, 6, 481],   "ignore_warnings" : ["More than one name found", "Date not found on col 2"] },
-#   { "name" : "2017 BEFU",  "sheet" : "17-BEFU",  "ignore_rows" : [0, 2, 3, 6],        "ignore_warnings" : ["More than one name found", "Date not found on col 2"] },
-#   { "name" : "2017 PREFU", "sheet" : "17-PREFU", "ignore_rows" : [0, 2, 3, 6],        "ignore_warnings" : ["More than one name found", "Date not found on col 2"] }
-]
+
+# Load settings
+with open('settings.json', 'rw') as settings_file:
+  settings = json.load(settings_file)
 
 # Load spreadsheet
-data = get_data("data/fsm.ods")
+data = get_data(settings["path"])
 print len(data), "sheets imported"
 
-m = Mutator(data, scenarios)
-print "Mutator has", len(m.ss), "SuperSeries"
-print len([ss for ss in m.ss if len(ss.series) > 1]), "of these are legit linked data series"
-
+# Parse mutations
+m = Mutator(data, settings["inputs"])
+print "Mutator has", len(m.ss), "SuperSeries,", len([ss for ss in m.ss if len(ss.series) > 1]), "of these are linked"
 
 def jsonify (self):
   out = []
