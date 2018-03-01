@@ -102,8 +102,14 @@ class SuperSeries (object):
       values[k][v] += 1
       self.consensus[k] = max(values[k])
 
-  def name_match (self, s):
-    return s.name in self.names
+  def name_search (self, exp):
+    for n in self.names:
+      if re.search(exp, n): return True
+    else:
+      return False
+
+  def name_match (self, name):
+    return name in self.names
 
   def data_match (self, s, threshold):
     return s.data_match(self.consensus, threshold)
