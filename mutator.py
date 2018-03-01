@@ -1,4 +1,5 @@
 from pyexcel_ods import save_data, get_data
+from collections import defaultdict
 import re
 import json
 
@@ -6,15 +7,6 @@ import json
 #-------------#
 #  Utilities  #
 #-------------#
-def check_row (row):
-  if   len(row) == 0: return "empty"
-  elif len(row) <= 2: return "section"
-  elif len(row) <  5: return "ignored"
-  elif sum([is_number(c) for c in row]) > 5: return "series"
-  elif sum([is_check(c) for c in row])  > 5: return "check"
-  elif sum([is_date(c) for c in row])   > 5: return "date"
-  return "unknown"
-
 def is_date (val):
   if type(val) not in (str, unicode): return False # Dates must be string or unicode
   match = re.match('\d{2,4}/\d{2,4}', val)         # Fiscal dates (e.g. 07/08, 2007/2008, or 2007/08)
@@ -92,7 +84,8 @@ class Series (object):
 
 class SuperSeries (object):
   def __init__ (self, s):
-    self.names     = {} # Frequency dictionary of names
+    self.names     = defaultdict(int) # Frequency dictionary of names
+    self.sections  = defaultdict(int) # Frequency dictionary of sections
     self.series    = {} # Dictionary of sources -> series from that source
     self.values    = {} # Dictionary of dates -> frequency dictionary of tables
     self.consensus = {} # Consensus values
@@ -104,8 +97,8 @@ class SuperSeries (object):
       print "--- ERROR ---!"
       self.explain_match(s)
       raise Exception("Trying to add another series from the same source!")
-    if s.name in self.names: self.names[s.name] += 1 # Increase frequency of name
-    else                   : self.names[s.name]  = 1 # Register new name
+    self.names[s.name] += 1
+    self.sections[s.section] += 1
     self.series[s.source] = s
     self.add_data(s.data)
 
@@ -113,8 +106,7 @@ class SuperSeries (object):
     values = self.values
     for k in data:
       v = data[k]
-      if not k in values   : values[k] = {}
-      if not v in values[k]: values[k][v] = 0
+      if not k in values: values[k] = defaultdict(int)
       values[k][v] += 1
       self.consensus[k] = max(values[k])
 
@@ -173,25 +165,24 @@ class Mutator (object):
 
   # Group rows by type
   def get_rows (self, sheet, opt):
-    section  = ""
-    ignored  = []
-    dates    = []
-    series   = []
-    unknown  = []
+    section = ""
+    rows    = defaultdict(list)
     for k, row in enumerate(sheet):
-      row_type = check_row(row)
-      if   row_type is "section"  : section = row[0]
-      if   k in opt["ignore_rows"]: ignored.append((k, row))
-      elif row_type is "empty"    : ignored.append((k, row))
-      elif row_type is "check"    : ignored.append((k, row))
-      elif row_type is "section"  : ignored.append((k, row))
-      elif row_type is "date"     : dates.append((k, row))
-      elif row_type is "series"   : series.append((k, row, section))
-      else:
-        self.warn("Unknown row type", k, row)
-        unknown.append((k, row))
-    print "Rows parsed:", len(series), "series,", len(ignored), "ignored,", len(dates), "dates,", len(unknown), "unknown"
-    return { "ignored" : ignored, "dates" : dates, "series" : series, "unknown" : unknown }
+      # Parse row type
+      if   k in opt["ignore_rows"]             : rtype = "ignored"
+      elif len(row) == 0                       : rtype = "empty"
+      elif len(row) <= 2                       : rtype = "section"
+      elif len(row) <  5                       : rtype = "ignored"
+      elif sum([is_number(c) for c in row]) > 5: rtype = "series"
+      elif sum([is_check(c) for c in row])  > 5: rtype = "check"
+      elif sum([is_date(c) for c in row])   > 5: rtype = "dates"
+      else                                     : rtype = "unknown"
+      # Special row actions
+      if   rtype is "section": section = row[0]
+      elif rtype is "unknown": self.warn("Unknown row type", k, row)
+      rows[rtype].append((k, row, section))
+    print "Rows parsed:", ", ".join([str(len(rows[k])) + " " + k for k in rows])
+    return rows
 
   # Extract date row into a column -> date lookup dictionary
   # e.g. { 23 : "06/07", 24 : "07/08", ... } (where the key is the column number)
