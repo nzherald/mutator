@@ -56,12 +56,14 @@ class Series (object):
   def data_match (self, data, threshold):
     matches = 0
     for date in sorted(data):
-      if date not in self.data: continue
-      a = self.data[date]
-      b = data[date]
-      if a and b:
-        diff = abs(a / b - 1)
-        if diff <= threshold: matches += 1
+      try:
+        a = self.data[date]
+        b = data[date]
+        if a and b:
+          diff = abs(a / b - 1)
+          if diff <= threshold: matches += 1
+      except KeyError:
+        None
     return matches
 
   def show (self):
@@ -111,12 +113,14 @@ class SuperSeries (object):
     print "Series :", s.show()
     print "Match  :", self.data_match(s, 0.0005), "of", len(s.data)
     for date in sorted(s.data):
-      if date not in self.consensus: continue
-      cv = self.consensus[date]            # Consensus value
-      nv = s.data[date]                    # New value
-      if cv and nv:
-        diff = abs(cv / nv - 1)            # Calculate difference with consensus value
-        print str(date).ljust(16), str(cv).ljust(16), str(nv).ljust(16), str(diff).ljust(8)
+      try:
+        cv = self.consensus[date]            # Consensus value
+        nv = s.data[date]                    # New value
+        if cv and nv:
+          diff = abs(cv / nv - 1)            # Calculate difference with consensus value
+          print str(date).ljust(16), str(cv).ljust(16), str(nv).ljust(16), str(diff).ljust(8)
+      except KeyError:
+        None
 
 
 
