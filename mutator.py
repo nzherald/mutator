@@ -64,16 +64,6 @@ class Series (object):
         if diff <= threshold: matches += 1
     return matches
 
-  def data_diff (self, data):
-    diff = 0
-    for date in sorted(data):
-      if date not in self.data: continue
-      a = self.data[date]
-      b = data[date]
-      if a and b:
-        diff += abs(a / b - 1)
-    return diff
-
   def show (self):
     return "(" + self.source + " row " + str(self.row_num) + ") " + self.name
 
@@ -115,9 +105,6 @@ class SuperSeries (object):
 
   def data_match (self, s, threshold):
     return s.data_match(self.consensus, threshold)
-
-  def data_diff (self, s):
-    return s.data_diff(self.consensus)
 
   def explain_match (self, s):
     for k in self.series: print "Super  :", self.series[k].show()
