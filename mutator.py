@@ -304,19 +304,17 @@ class Mutator (object):
       raise Exception("Stopping on warning!")
 
 
-  def jsonify (self):
-    out = []
-    # ss_list = [ss for ss in self.ss if len(ss.series) > 1]
-    ss_list = sorted(self.ss, key=lambda ss: len(ss.series))
-    for ss in ss_list:
-      out.append({
-          "name"   : max(ss.names),
-          "names"  : ss.names,
-          "series" : [{ "source" : source, "data" : ss.series[source].data } for source in ss.series]
-      })
-    return out
-
-
+  #---------------#
+  #  Data output  #
+  #---------------#
+  def dump (self, ss_list):
+    print "Dumping", len(ss_list), "SuperSeries"
+    return [{
+        "name"     : max(ss.names),
+        "names"    : ss.names,
+        "sections" : ss.names,
+        "series"   : [{ "source" : src, "data" : ss.series[src].data } for src in ss.series]
+      } for ss in ss_list]
 
 
 # Load settings
@@ -331,18 +329,22 @@ print len(data), "sheets imported"
 m = Mutator(data, settings["inputs"])
 print "Mutator has", len(m.ss), "SuperSeries,", len([ss for ss in m.ss if len(ss.series) > 1]), "of these are linked"
 
-def jsonify (self):
-  out = []
-  # ss_list = [ss for ss in self.ss if len(ss.series) > 1]
-  ss_list = filter(lambda ss: len(ss.series) > 1, self.ss)
-  ss_list = sorted(self.ss, key=lambda ss: len(ss.series))
-  for ss in ss_list:
-    out.append({
-        "name"   : max(ss.names),
-        "names"  : ss.names,
-        "series" : [{ "source" : source, "data" : ss.series[source].data } for source in ss.series]
-      })
-  return out
+# List names
+print "-----------------"
+print "List of joined series:"
+for k, ss in enumerate(m.ss[0:50]):
+  if len(ss.series) >= 3:
+    print k, "-", max(ss.names), max(ss.sections), len(ss.series)
 
-with open('out.json', 'w') as outfile:
-  json.dump(jsonify(m), outfile)
+for k, ss in enumerate(m.ss):
+  if ss.name_search("net worth"):
+    print k, "-", max(ss.names), max(ss.sections), len(ss.series)
+
+# Dump selected outputs
+outputs = [23, 40]
+ss_list = [m.ss[k] for k in outputs]
+dump = m.dump(ss_list)
+with open('out.json', 'w') as dump_file:
+  json.dump(dump, dump_file)
+  print "Dumped to out.json"
+
