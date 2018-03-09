@@ -131,10 +131,12 @@ class SuperSeries (object):
 
 
 class Mutator (object):
-  def __init__ (self, data, inputs):
+  def __init__ (self, data, inputs, common):
     print "Starting Mutator..."
     self.ss = []
-    for opt in inputs: self.parse_sheet(data, opt)
+    for opt in inputs:
+      for k in common: opt[k] += common[k] # Use common settings
+      self.parse_sheet(data, opt)
     print "Mutator finished."
 
 
@@ -214,15 +216,17 @@ class Mutator (object):
   #  Series joiners  #
   #------------------#
   def find_ss (self, s, ss_list, threshold=0.0, match_count=6):
-    matches = [ss for ss in ss_list if ss.data_match(s, threshold) > match_count]
+    matches = [ss for ss in ss_list if ss.data_match(s, threshold) >= match_count]
     if len(matches) == 1: return matches[0]
     # Refine with name match if there are multiple results
-    matches = [ss for ss in matches if ss.name_match(s)]
+    matches = [ss for ss in matches if ss.name_match(s.name)]
     if len(matches) == 1: return matches[0]
     if matches:
       self.warn("Multiple matches!", s.row_num, s.row)
-      for ss in matches: print ss.names, ss.consensus
+#       print "Multiple matches!!"
+#       for ss in matches: print ss.names, ss.consensus
 #       raise Except("oh")
+#       return None
 
   def parse_series (self, series):
     duplicate = []
@@ -313,7 +317,7 @@ class Mutator (object):
         "name"     : max(ss.names),
         "names"    : ss.names,
         "sections" : ss.names,
-        "series"   : [{ "source" : src, "data" : ss.series[src].data } for src in ss.series]
+        "series"   : [{ "name" : src, "data" : ss.series[src].data } for src in ss.series]
       } for ss in ss_list]
 
 
@@ -326,7 +330,14 @@ data = get_data(settings["path"])
 print len(data), "sheets imported"
 
 # Parse mutations
-m = Mutator(data, settings["inputs"])
+m = Mutator(data, settings["inputs"], settings["common"])
+
+# Testing
+with open('settings.json', 'rw') as settings_file:
+  settings = json.load(settings_file)
+  m = Mutator(data, settings["inputs"], settings["common"])
+
+
 print "Mutator has", len(m.ss), "SuperSeries,", len([ss for ss in m.ss if len(ss.series) > 1]), "of these are linked"
 
 # List names
